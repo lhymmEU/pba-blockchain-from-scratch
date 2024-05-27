@@ -58,6 +58,7 @@ impl StateMachine for Atm {
     type Transition = Action;
 
     fn next_state(starting_state: &Self::State, t: &Self::Transition) -> Self::State {
+        /*
         match t {
             Action::SwipeCard(pin_hash) => {
                 match starting_state.expected_pin_hash {
@@ -109,6 +110,9 @@ impl StateMachine for Atm {
                 }
             }
         }
+    }
+    */
+        todo!()
     }
 }
 
