@@ -58,7 +58,57 @@ impl StateMachine for Atm {
     type Transition = Action;
 
     fn next_state(starting_state: &Self::State, t: &Self::Transition) -> Self::State {
-        todo!("Exercise 4")
+        match t {
+            Action::SwipeCard(pin_hash) => {
+                match starting_state.expected_pin_hash {
+                    Auth::Waiting => Atm {
+                        cash_inside: starting_state.cash_inside,
+                        expected_pin_hash: Auth::Authenticating(*pin_hash),
+                        keystroke_register: Vec::new(),
+                    },
+                    Auth::Authenticating(_) => starting_state.clone(),
+                    Auth::Authenticated => Atm {
+                        expected_pin_hash: Auth::Waiting,
+                        ..starting_state.clone()
+                    },
+                }
+            },
+            Action::PressKey(Key::Enter) => {
+                match starting_state.expected_pin_hash {
+                    Auth::Authenticating(pin_hash) => {
+                        if crate::hash(&starting_state.keystroke_register) == pin_hash {
+                            Atm {
+                                expected_pin_hash: Auth::Authenticated,
+                                ..starting_state.clone()
+                            }
+                        } else {
+                            Atm {
+                                expected_pin_hash: Auth::Waiting,
+                                keystroke_register: Vec::new(),
+                                ..starting_state.clone()
+                            }
+                        }
+                    },
+                    Auth::Waiting => starting_state.clone(),
+                    Auth::Authenticated => {
+                        let withdraw_amount = crate::hash(&starting_state.keystroke_register);
+                        if withdraw_amount > starting_state.cash_inside {
+                            Atm {
+                                expected_pin_hash: Auth::Waiting,
+                                keystroke_register: Vec::new(),
+                                ..starting_state.clone()
+                            }
+                        } else {
+                            Atm {
+                                cash_inside: starting_state.cash_inside - withdraw_amount,
+                                expected_pin_hash: Auth::Waiting,
+                                keystroke_register: Vec::new(),
+                            }
+                        }
+                    },
+                }
+            }
+        }
     }
 }
 
